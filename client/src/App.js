@@ -36,13 +36,28 @@ class App extends React.Component {
           data.report_ids.forEach(reportID => {
             uploadedFiles.push(reportID.report_id)
           })
-          this.setState({ reports: data.reports, uploadedFiles: uploadedFiles })
+          this.setState({ loaded: 0, reports: data.reports, uploadedFiles: uploadedFiles })
         })
     }
   }
   // if reportID exists in selectedFiles, return true
   duplicateReports(reportID) {
     return this.state.selectedFiles[reportID]
+  }
+  // pre-process report to make sure all required info exists
+  preProcess(results) {
+    console.log(results)
+    this.setState({ error: null })
+    for (let i = 1; i < results.data.length - 1; i++) {
+      if (!(results.data[i][2] && results.data[i][3])) {
+        this.setState({ error: "Pre Process failed: Missing employee id/job group" })
+        return false;
+      } else if (!results.data[results.data.length - 1][1]) {
+        this.setState({ error: "Pre Process failed: Missing report id" })
+        return false;
+      }
+    }
+    return true;
   }
   onChangeHandler = event => {
     // if users click "cancel", we are not going to do anything
@@ -51,16 +66,17 @@ class App extends React.Component {
       Papa.parse(event.target.files[0], {
         skipEmptyLines: true,
         complete: (results) => {
-          let reportID = parseInt(results.data[results.data.length - 1][1])
-          console.log(reportID)
-          if (this.state.uploadedFiles.includes(reportID)) {
-            this.setState({ error: `Report id: ${reportID} is already uploaded before. Please select another file` })
-          } else if (!this.duplicateReports(reportID)) {
-            let selectedFiles = this.state.selectedFiles
-            selectedFiles[reportID] = selectedFile
-            this.setState({ selectedFiles: selectedFiles, error: null })
-          } else {
-            this.setState({ error: "Files with same report ID are not allowed to submit twice" })
+          if (this.preProcess(results)) {
+            let reportID = parseInt(results.data[results.data.length - 1][1])
+            if (this.state.uploadedFiles.includes(reportID)) {
+              this.setState({ error: `Report id: ${reportID} is already uploaded before. Please select another file` })
+            } else if (!this.duplicateReports(reportID)) {
+              let selectedFiles = this.state.selectedFiles
+              selectedFiles[reportID] = selectedFile
+              this.setState({ selectedFiles: selectedFiles, error: null })
+            } else {
+              this.setState({ error: "Files with same report ID are not allowed to submit twice" })
+            }
           }
         }
       })
@@ -76,7 +92,13 @@ class App extends React.Component {
         method: 'post',
         header: { 'Content-Type': 'application/json' },
         body: data
-      }).then(res => res.json())
+      }).then(res => {
+        if (res.status !== 200) {
+          this.setState({ error: "Something went wrong when processing the data." })
+        } else {
+          res.json()
+        }
+      })
         .then(data => {
           this.setState({ loaded: 1, selectedFiles: {} })
           console.log(data)

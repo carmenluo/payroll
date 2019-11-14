@@ -20,7 +20,9 @@ class Api::RecordsController < ApplicationController
   # POST /records
   # POST /records.json
   def create
-
+Report.destroy_all
+Record.destroy_all
+Employee.destroy_all
     puts params['file']
     puts params['report_id']
     report_id = params["report_id"].to_i
@@ -29,12 +31,17 @@ class Api::RecordsController < ApplicationController
       if row[0] != "report id"
         # check if this employee id exists or not
         if !Employee.exists?(row[2])
-        @employee =  Employee.create(id: row[2], job_group: row[3])
+        @employee =  Employee.create!(id: row[2], job_group: row[3])
         end
         @employee = Employee.find(row[2])
         # store raw data into database with date, hours_worked, report_id and associate with Employee model
-        @record = @employee.records.create(date: row[0], hours_worked: row[1], report_id: report_id )
-        add_report_item(@employee, @record)
+        @record = @employee.records.new(date: row[0], hours_worked: row[1], report_id: report_id )
+        if @record.save
+          add_report_item(@employee, @record)
+        else
+          render json: @record.errors, status: :unprocessable_entity
+        end
+        
       end
     end
     # @record = Record.new(record_params)
@@ -49,6 +56,7 @@ class Api::RecordsController < ApplicationController
     render json: {reports: reports, report_ids: report_ids}
   end
   def add_report_item(employee, record)
+    if record.hours_worked != 0 
     amount_paid = 0
     case employee.job_group
     when "A"
@@ -69,6 +77,7 @@ class Api::RecordsController < ApplicationController
     report.amount_paid ||= 0
     report.amount_paid += amount_paid
     report.save!
+  end
   end
   # PATCH/PUT /records/1
   # PATCH/PUT /records/1.json
