@@ -221,3 +221,6 @@ Evaluation of your submission will be based on the following criteria.
    they explained?
 1. Did you separate any concerns in your application? Why or why not?
 1. Does your solution use appropriate data types for the problem as described?
+
+Assumptions:
+1. Users are allowed to select one file at a time, but they can choose multiple before upload.

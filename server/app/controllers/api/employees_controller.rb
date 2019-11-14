@@ -1,10 +1,11 @@
-class EmployeesController < ApplicationController
+class Api::EmployeesController < ApplicationController
   before_action :set_employee, only: [:show, :update, :destroy]
 
   # GET /employees
   # GET /employees.json
   def index
     @employees = Employee.all
+    render json: @employees
   end
 
   # GET /employees/1
