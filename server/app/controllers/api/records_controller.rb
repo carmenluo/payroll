@@ -2,7 +2,7 @@ require 'csv'
 require 'date'
 require 'active_support/all'
 class Api::RecordsController < ApplicationController
-  before_action :set_record, only: [:show, :update, :destroy]
+  # before_action :set_record, only: [:show, :update, :destroy]
 
   # GET /records
   # GET /records.json
@@ -12,19 +12,16 @@ class Api::RecordsController < ApplicationController
     render json: {reports: reports, report_ids: report_ids}
   end
 
-  # GET /records/1
-  # GET /records/1.json
+  # shows records corresponding to reports
   def show
+    report_id = params[:id]
+    render json: Record.where(report_id: report_id)
   end
 
-  # POST /records
-  # POST /records.json
   def create
-Report.destroy_all
-Record.destroy_all
-Employee.destroy_all
-    puts params['file']
-    puts params['report_id']
+    Report.destroy_all
+    Record.destroy_all
+    Employee.destroy_all
     report_id = params["report_id"].to_i
     CSV.foreach(params["file"].tempfile,headers: true, skip_blanks: true) do |row|
       # parse CSV file except for the last row
@@ -35,26 +32,19 @@ Employee.destroy_all
         end
         @employee = Employee.find(row[2])
         # store raw data into database with date, hours_worked, report_id and associate with Employee model
-        @record = @employee.records.new(date: row[0], hours_worked: row[1], report_id: report_id )
+        @record = @employee.records.new(date: row[0], hours_worked: row[1] || 0, report_id: report_id )
         if @record.save
           add_report_item(@employee, @record)
         else
-          render json: @record.errors, status: :unprocessable_entity
-        end
-        
+          render json: {error: @record.errors,report_id: report_id}
+        end       
       end
     end
-    # @record = Record.new(record_params)
-
-    # if @record.save
-    #   # render :show, status: :created, location: @record
-    # else
-    #   render json: @record.errors, status: :unprocessable_entity
-    # end
     reports =  Report.order('employee_id, pay_start_date').all
     report_ids = Record.select(:report_id).distinct
     render json: {reports: reports, report_ids: report_ids}
   end
+  # Based on records calculate report items and store into database
   def add_report_item(employee, record)
     if record.hours_worked != 0 
     amount_paid = 0
@@ -79,30 +69,11 @@ Employee.destroy_all
     report.save!
   end
   end
-  # PATCH/PUT /records/1
-  # PATCH/PUT /records/1.json
-  def update
-    if @record.update(record_params)
-      render :show, status: :ok, location: @record
-    else
-      render json: @record.errors, status: :unprocessable_entity
-    end
-  end
-
-  # DELETE /records/1
-  # DELETE /records/1.json
-  def destroy
-    @record.destroy
-  end
-
+ 
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_record
       @record = Record.find(params[:id])
     end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
-    # def record_params
-    #   params.require(:record).permit(:date, :hours_worked, :report_id, :employee_id)
-    # end
 end

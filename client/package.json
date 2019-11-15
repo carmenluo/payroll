@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "actioncable": "^5.2.3",
     "http-proxy-middleware": "^0.20.0",
     "papaparse": "^5.1.0",
     "react": "^16.11.0",

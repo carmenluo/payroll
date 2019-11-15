@@ -1,19 +1,24 @@
 import React from 'react';
 import Papa from 'papaparse';
 import ReportList from './components/ReportList'
+import Error from './components/Error'
+import Header from './components/Header'
+import SelectedFiles from './components/SelectedFiles'
+import ActionCable from 'actioncable'
 import './App.css';
 class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      employees: [],
       uploadedFiles: [],
       selectedFiles: {},
       loaded: 0,
       reports: [],
-      error: null
+      error: null,
+      errorDetail: null
     }
     this.onChangeHandler = this.onChangeHandler.bind(this);
+    this.onDeleteHandler = this.onDeleteHandler.bind(this)
   }
   componentDidMount() {
     fetch('http://localhost:3001/api/records')
@@ -26,9 +31,14 @@ class App extends React.Component {
         })
         this.setState({ reports: data.reports, uploadedFiles: uploadedFiles })
       })
+      const cable = ActionCable.createConsumer('ws://localhost:3001/cable');
+      this.sub = cable.subscriptions.create('ReportsChannel', {
+        received: data=>this.setState({error: 'Someone Updates the Report. Please refresh first'})
+      })
   }
   componentDidUpdate(prevProps, prevState) {
     if (this.state.loaded !== prevState.loaded) {
+      this.sub.send({loaded: 1})
       fetch('http://localhost:3001/api/records')
         .then(res => res.json())
         .then(data => {
@@ -40,6 +50,12 @@ class App extends React.Component {
         })
     }
   }
+  // handleReceiveNewText = ({ reports }) => {
+  //   // if (text !== this.state.text) {
+  //   //   this.setState({ text })
+  //   // }
+  //   console.log(reports)
+  // }
   // if reportID exists in selectedFiles, return true
   duplicateReports(reportID) {
     return this.state.selectedFiles[reportID]
@@ -82,6 +98,12 @@ class App extends React.Component {
       })
     }
   }
+  // click delete button will remove file from selectedFiles
+  onDeleteHandler = (reportID) => {
+    let selectedFiles = this.state.selectedFiles;
+    delete selectedFiles[reportID];
+    this.setState({ selectedFiles: selectedFiles })
+  }
   // submit files to server and store into database
   onClickHandler = () => {
     for (let selectedFile in this.state.selectedFiles) {
@@ -93,8 +115,12 @@ class App extends React.Component {
         header: { 'Content-Type': 'application/json' },
         body: data
       }).then(res => {
+        console.log(res)
         if (res.status !== 200) {
-          this.setState({ error: "Something went wrong when processing the data." })
+          this.setState({
+            error: "Something went wrong when processing the data.", errorDetail: `Error Status: ${res.status} on ${res.url}
+          statusText: ${res.statusText} reportID: ${selectedFile}`
+          })
         } else {
           res.json()
         }
@@ -107,32 +133,40 @@ class App extends React.Component {
   }
   render() {
     // console.log(Object.values(this.state.selectedFiles))
-    let files = Object.values(this.state.selectedFiles).map((file, index) => {
-      return <li key={index}>{file.name}</li>
-    })
+    // let files = Object.values(this.state.selectedFiles).map((file, index) => {
+    //   return <li key={index}>{file.name}
+    //     <i className="fa fa-remove" onClick={this.onDeleteHandler}></i>
+    //   </li>
+    // })
+    let files = Object.values(this.state.selectedFiles)
+    let ids = Object.keys(this.state.selectedFiles)
+    // console.log(files)
     let reportIDs = this.state.uploadedFiles.map((file, index) => {
       return <li className='list-inline-item' key={index}>{file}</li>
     })
     return (
-      <div className='container'>
-        <div className='row'>
-          <div className='offset-md-3 col-md-6'>
-            <div className='form-group files'>
-              <label>Please select you file to upload</label>
-              <input type='file' accept=".csv" name='file' className='form-control' onChange={this.onChangeHandler}></input>
+      <div>
+        <Header></Header>
+        <div className='container'>
+          <div className='row'>
+            <div className='offset-md-3 col-md-6'>
+              <div className='form-group files'>
+                <label>Please select you file to upload</label>
+                <input type='file' accept=".csv" name='file' className='form-control' onChange={this.onChangeHandler}></input>
+              </div>
+              <ul className='list-inline'>
+                <SelectedFiles onDeleteHandler={this.onDeleteHandler} selectedFiles={files} ids={ids}></SelectedFiles>
+              </ul>
+              <button type='button' className='btn btn-s' onClick={this.onClickHandler}>Upload</button>
             </div>
-            <ul className='list-inline'>
-              {files}
-            </ul>
-            <button type='button' className='btn btn-s' onClick={this.onClickHandler}>Upload</button>
           </div>
+          <label>Payroll Report Contains the following report IDs:</label>
+          <ul className='list-inline'>{reportIDs}
+          </ul>
+
+          {this.state.error && <Error error={this.state.error} errorDetail={this.state.errorDetail}></Error>}
+          <ReportList reports={this.state.reports}></ReportList>
         </div>
-        <div>Payroll Report Contains the following report IDs:
-        <ul className='list-inline'>{reportIDs}</ul>
-        </div>
-        {this.state.error &&
-          <div className='alert alert-danger'>{this.state.error}</div>}
-        <ReportList reports={this.state.reports}></ReportList>
       </div>
     )
   }

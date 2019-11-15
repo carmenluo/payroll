@@ -1,6 +1,4 @@
 class Api::EmployeesController < ApplicationController
-  before_action :set_employee, only: [:show, :update, :destroy]
-
   # GET /employees
   # GET /employees.json
   def index
@@ -8,9 +6,9 @@ class Api::EmployeesController < ApplicationController
     render json: @employees
   end
 
-  # GET /employees/1
-  # GET /employees/1.json
+# Get records related to employee id
   def show
+    render json: Record.where(employee_id: params[:id])
   end
 
   # POST /employees
@@ -23,22 +21,6 @@ class Api::EmployeesController < ApplicationController
     else
       render json: @employee.errors, status: :unprocessable_entity
     end
-  end
-
-  # PATCH/PUT /employees/1
-  # PATCH/PUT /employees/1.json
-  def update
-    if @employee.update(employee_params)
-      render :show, status: :ok, location: @employee
-    else
-      render json: @employee.errors, status: :unprocessable_entity
-    end
-  end
-
-  # DELETE /employees/1
-  # DELETE /employees/1.json
-  def destroy
-    @employee.destroy
   end
 
   private
