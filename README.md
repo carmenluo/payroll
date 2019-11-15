@@ -224,27 +224,32 @@ Evaluation of your submission will be based on the following criteria.
 
 ### Documentation:
 1. Requirements
-git,yarn, react, ruby on rails, postgresql
+git,bundle, yarn, react, ruby on rails, postgresql
 #### Thoughts
 1. This project was divided into two different services (API Server, Web Client).
 Seperated the concern into two big part and the api can be used for other similar projects
 2. In react, parent component APP use class components to handle states and send stateless props to child components so that we can keep track of our app state in just one file
 3. I seperated 3 data models (Employee, Record and Report) in my database, because I want to build the relationship based on Employee (what records are belong to this employee and reports items for this employee), Raw data stores into Record and generate Report stores into Report for references.
 4. I pre-process the file when users select the files in that case we can avoid some dangerous behavior towards our database and also save some time for accessing database
+5. Considerations: we can add action cable to sync all clients, we can all more features to help clients get more info from the raw data, UI improvement.
 
 #### Assumptions:
 1. Users are allowed to select one file at a time, but they can choose multiple before upload.
-2. Provide api to check database infos
+2. The report should be based on all of the data across all of the uploaded time reports, for all time. No single report listed, but provided uploaded report ids.
+3. Provide api to check database infos
     - http://localhost:3001/api/records: all records and all reports ids
     - http://localhost:3001/api/records/{reportid}: all records relate to this record id
     - http://localhost:3001/api/employees: all employee records
     - http://localhost:3001/api/employees/{employeeid}: all records relate to this employee
-Setup:
-## start server:
+### Setup:
+#### setup postgresql
 1. cd server
+2. rails db:create
+#### start server:
+1. cd server
+2. bundle install
 2. rails s -p 3001
-
-## start client:
+#### start client:
 1. cd client
 2. yarn install
 3. yarn start
