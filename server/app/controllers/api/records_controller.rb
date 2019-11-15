@@ -2,8 +2,6 @@ require 'csv'
 require 'date'
 require 'active_support/all'
 class Api::RecordsController < ApplicationController
-  # before_action :set_record, only: [:show, :update, :destroy]
-
   # GET /records
   # GET /records.json
   def index
@@ -19,9 +17,7 @@ class Api::RecordsController < ApplicationController
   end
 
   def create
-    Report.destroy_all
-    Record.destroy_all
-    Employee.destroy_all
+
     report_id = params["report_id"].to_i
     CSV.foreach(params["file"].tempfile,headers: true, skip_blanks: true) do |row|
       # parse CSV file except for the last row

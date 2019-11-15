@@ -4,7 +4,6 @@ import ReportList from './components/ReportList'
 import Error from './components/Error'
 import Header from './components/Header'
 import SelectedFiles from './components/SelectedFiles'
-import ActionCable from 'actioncable'
 import './App.css';
 class App extends React.Component {
   constructor(props) {
@@ -31,14 +30,9 @@ class App extends React.Component {
         })
         this.setState({ reports: data.reports, uploadedFiles: uploadedFiles })
       })
-      const cable = ActionCable.createConsumer('ws://localhost:3001/cable');
-      this.sub = cable.subscriptions.create('ReportsChannel', {
-        received: data=>this.setState({error: 'Someone Updates the Report. Please refresh first'})
-      })
   }
   componentDidUpdate(prevProps, prevState) {
     if (this.state.loaded !== prevState.loaded) {
-      this.sub.send({loaded: 1})
       fetch('http://localhost:3001/api/records')
         .then(res => res.json())
         .then(data => {
@@ -46,17 +40,11 @@ class App extends React.Component {
           data.report_ids.forEach(reportID => {
             uploadedFiles.push(reportID.report_id)
           })
-          this.setState({ loaded: 0, reports: data.reports, uploadedFiles: uploadedFiles })
+          this.setState({ loaded:0, reports: data.reports, uploadedFiles: uploadedFiles })
         })
     }
   }
-  // handleReceiveNewText = ({ reports }) => {
-  //   // if (text !== this.state.text) {
-  //   //   this.setState({ text })
-  //   // }
-  //   console.log(reports)
-  // }
-  // if reportID exists in selectedFiles, return true
+
   duplicateReports(reportID) {
     return this.state.selectedFiles[reportID]
   }
@@ -127,20 +115,12 @@ class App extends React.Component {
       })
         .then(data => {
           this.setState({ loaded: 1, selectedFiles: {} })
-          console.log(data)
         })
     }
   }
   render() {
-    // console.log(Object.values(this.state.selectedFiles))
-    // let files = Object.values(this.state.selectedFiles).map((file, index) => {
-    //   return <li key={index}>{file.name}
-    //     <i className="fa fa-remove" onClick={this.onDeleteHandler}></i>
-    //   </li>
-    // })
     let files = Object.values(this.state.selectedFiles)
     let ids = Object.keys(this.state.selectedFiles)
-    // console.log(files)
     let reportIDs = this.state.uploadedFiles.map((file, index) => {
       return <li className='list-inline-item' key={index}>{file}</li>
     })

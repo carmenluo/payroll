@@ -222,5 +222,29 @@ Evaluation of your submission will be based on the following criteria.
 1. Did you separate any concerns in your application? Why or why not?
 1. Does your solution use appropriate data types for the problem as described?
 
-Assumptions:
+### Documentation:
+1. Requirements
+git,yarn, react, ruby on rails, postgresql
+#### Thoughts
+1. This project was divided into two different services (API Server, Web Client).
+Seperated the concern into two big part and the api can be used for other similar projects
+2. In react, parent component APP use class components to handle states and send stateless props to child components so that we can keep track of our app state in just one file
+3. I seperated 3 data models (Employee, Record and Report) in my database, because I want to build the relationship based on Employee (what records are belong to this employee and reports items for this employee), Raw data stores into Record and generate Report stores into Report for references.
+4. I pre-process the file when users select the files in that case we can avoid some dangerous behavior towards our database and also save some time for accessing database
+
+#### Assumptions:
 1. Users are allowed to select one file at a time, but they can choose multiple before upload.
+2. Provide api to check database infos
+    - http://localhost:3001/api/records: all records and all reports ids
+    - http://localhost:3001/api/records/{reportid}: all records relate to this record id
+    - http://localhost:3001/api/employees: all employee records
+    - http://localhost:3001/api/employees/{employeeid}: all records relate to this employee
+Setup:
+## start server:
+1. cd server
+2. rails s -p 3001
+
+## start client:
+1. cd client
+2. yarn install
+3. yarn start
